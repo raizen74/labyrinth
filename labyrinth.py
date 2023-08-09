@@ -138,14 +138,14 @@ def solution(grid):
     ...     [".",".","."],
     ...     [".",".","."],
     ... ]
-    >>> solution(graph)
+    >>> solution(grid)
     2
     >>> no_solution_grid = [
     ...     [".",".","."],
     ...     [".",".","."],
     ...     ["#",".","."],
     ... ]
-    >>> solution(no_solution_graph)
+    >>> solution(no_solution_grid)
     -1
     """
     #Check correct grid type
