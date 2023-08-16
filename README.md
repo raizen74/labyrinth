@@ -22,6 +22,6 @@ The rod is initially positioned horizontally, and its left cell lies in [0, 0].
 Example:
 <img src="[https://github.com/username/repo/raw/main/images/logo.png](https://github.com/raizen74/labyrinth/blob/main/labyrinth.png)" alt="GitHub Logo" width="200"/>
 
-![Image](blob/main/labyrinth.png)
+![Example](labyrinth.png)
 
 https://github.com/raizen74/labyrinth/blob/main/labyrinth.png
