@@ -176,23 +176,23 @@ def solution(grid):
         
         # Generate next possible positions (movement) 
         next_positions = [
-            ([pos[0] + 1, pos[1]] for pos in (pos1, pos2, pos3)), #generator, all cell rows +1(down)
-            ([pos[0] - 1, pos[1]] for pos in (pos1, pos2, pos3)), #generator, all cell rows -1(up)
-            ([pos[0], pos[1] + 1] for pos in (pos1, pos2, pos3)), #generator, all cell columns +1(right)
-            ([pos[0], pos[1] - 1] for pos in (pos1, pos2, pos3)), #generator, all cell columns -1(left)
+            ((pos[0] + 1, pos[1]) for pos in (pos1, pos2, pos3)), #generator, all cell rows +1(down)
+            ((pos[0] - 1, pos[1]) for pos in (pos1, pos2, pos3)), #generator, all cell rows -1(up)
+            ((pos[0], pos[1] + 1) for pos in (pos1, pos2, pos3)), #generator, all cell columns +1(right)
+            ((pos[0], pos[1] - 1) for pos in (pos1, pos2, pos3)), #generator, all cell columns -1(left)
         ]
         
         # Append cells next positions to the queue IF: they are valid, they are not already in the queue and haven't been visited.
-        for new_pos1, new_pos2, new_pos3 in next_positions:
-            next_pos = (tuple(new_pos1),tuple(new_pos2),tuple(new_pos3), distance + 1)
-            position = next_pos[:-1]
-            if next_pos not in queue and position not in visited and is_valid_move(grid, position): #valid position and not in queue and not visited
-                queue.append(next_pos)
+        for move in next_positions:
+            state = (*move, distance + 1)
+            position = state[:-1]
+            if state not in queue and position not in visited and is_valid_move(grid, position): #valid position and not in queue and not visited
+                queue.append(state)
         
         # IF rod can rotate and the rotation is not already in the queue and hasn't been visited, append rotation to the queue.
         rotation = rotate(grid, (pos1, pos2, pos3))
         if rotation is not None: #check valid rotation
-            if ((rotation[0], rotation[1], rotation[2], distance + 1) not in queue) and rotation not in visited: #new rotation not visited and not in queue
-                queue.append((rotation[0], rotation[1], rotation[2], distance + 1))
+            if ((*rotation, distance + 1) not in queue) and rotation not in visited: #new rotation not visited and not in queue
+                queue.append((*rotation, distance + 1))
     
     return -1  # No valid path found
