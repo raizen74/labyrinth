@@ -19,6 +19,8 @@ The rod is initially positioned horizontally, and its left cell lies in [0, 0].
 
 **Guaranteed constraints**: 3 ≤ labyrinth.length ≤ 1000, 3 ≤ labyrinth[i].length ≤ 1000
 
+**Only Python built-in types are allowed**
+
 Example:
 
 ![Example](labyrinth.png)
