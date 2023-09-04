@@ -111,48 +111,35 @@ def rotate(
     None
     """
 
-    rows_ = [cell[0] for cell in rod]
-    cols_ = [cell[1] for cell in rod]
+    rows_, cols_ = list(zip(*(rod)))
 
     if all(
-        (
-            (rows_[1] in range(1, rows - 1)),
-            (cols_[1] in range(1, cols - 1)),
-        )
+        ([0 < rows_[1] < rows - 1, 0 < cols_[1] < cols - 1])
     ):  # check if the central cell is not next to the wall
+        CLEAR = "."
+        UP = rows_[1] + 1
+        DOWN = rows_[1] - 1
+
         if len(set(rows_)) == 1:  # check if rod is horizontal
             if all(
-                (
-                    (grid[rows_[0] + 1][cols_[0]] == "."),
-                    (grid[rows_[1] + 1][cols_[1]] == "."),
-                    (grid[rows_[2] + 1][cols_[2]] == "."),
-                    (grid[rows_[0] - 1][cols_[0]] == "."),
-                    (grid[rows_[1] - 1][cols_[1]] == "."),
-                    (grid[rows_[2] - 1][cols_[2]] == "."),
-                )
-            ):  # check if cells above and under are not blocked
+                grid[UP][col] == CLEAR and grid[DOWN][col] == CLEAR for col in cols_
+            ):
                 return (
-                    (rod[1][0] - 1, rod[1][1]),
+                    (DOWN, cols_[1]),
                     rod[1],
-                    (rod[1][0] + 1, rod[1][1]),
+                    (UP, cols_[1]),
                 )  # returns the vertically aligned rod
 
-        else:  # rod is vertical
-            if all(
-                (
-                    (grid[rows_[0]][cols_[0] + 1] == "."),
-                    (grid[rows_[1]][cols_[1] + 1] == "."),
-                    (grid[rows_[2]][cols_[2] + 1] == "."),
-                    (grid[rows_[0]][cols_[0] - 1] == "."),
-                    (grid[rows_[1]][cols_[1] - 1] == "."),
-                    (grid[rows_[2]][cols_[2] - 1] == "."),
-                )
-            ):  # check if cells to the right and to the left are not blocked
-                return (
-                    (rod[1][0], rod[1][1] - 1),
-                    rod[1],
-                    (rod[1][0], rod[1][1] + 1),
-                )  # returns the horizontally aligned rod
+        # rod is vertical
+        RIGHT = cols_[1] + 1
+        LEFT = cols_[1] - 1
+
+        if all(grid[row][RIGHT] == CLEAR and grid[row][LEFT] == CLEAR for row in rows_):
+            return (
+                (rows_[1], LEFT),
+                rod[1],
+                (rows_[1], RIGHT),
+            )  # returns the horizontally aligned rod
 
 
 def solution(grid: list[list[str]]) -> int:
@@ -206,10 +193,11 @@ def solution(grid: list[list[str]]) -> int:
         if not all(item in (".", "#") for item in sublist):
             raise ValueError("Each element in the sublists must be a '.' or '#'.")
 
-    rows = len(grid)
-    cols = len(grid[0])
+    ROWS = len(grid)
+    COLS = len(grid[0])
+    GOAL = (ROWS - 1, COLS - 1)
 
-    if cols < 2 | rows < 1:
+    if COLS < 2 | ROWS < 1:
         return -1
     elif any([grid[0][0] == "#", grid[0][1] == "#", grid[0][2] == "#"]):
         return -1
@@ -220,13 +208,14 @@ def solution(grid: list[list[str]]) -> int:
 
     while queue:  # breadth first search
         pos1, pos2, pos3, distance = queue.pop(0)  # FIFO queue
-        single_queue.discard((pos1, pos2, pos3))
-        visited.add((pos1, pos2, pos3))  # add rod state to visited
+        state = (pos1, pos2, pos3)
+        single_queue.discard(state)
+        visited.add(state)  # add rod state to visited
         if any(
             [
-                pos1 == (rows - 1, cols - 1),
-                pos2 == (rows - 1, cols - 1),
-                pos3 == (rows - 1, cols - 1),
+                pos1 == GOAL,
+                pos2 == GOAL,
+                pos3 == GOAL,
             ]
         ):  # if any rod cell is at lower right corner
             return distance
@@ -240,16 +229,14 @@ def solution(grid: list[list[str]]) -> int:
                 [
                     move not in visited,  # membership check in a set
                     move not in single_queue,  # membership check in a set
-                    is_valid_move(grid, move, rows, cols),  # check if move is valid
+                    is_valid_move(grid, move, ROWS, COLS),  # check if move is valid
                 ]
             ):  # not visited & not in queue & valid position
                 queue.append(move + (distance + 1,)), single_queue.add(move)
 
-        if rotation := rotate(
-            grid, (pos1, pos2, pos3), rows, cols
-        ):  # check if rod can rotate
+        if rotation := rotate(grid, state, ROWS, COLS):  # check if rod can rotate
             if all(
-                (rotation not in visited, rotation not in single_queue)
+                [rotation not in visited, rotation not in single_queue]
             ):  # new rotation not visited and not in queue
                 queue.append((*rotation, distance + 1)), single_queue.add(rotation)
 
