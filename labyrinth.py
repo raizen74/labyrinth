@@ -18,6 +18,44 @@ Author: David Galera
 """
 
 
+# Implementation of a FIFO Queue using a linked list
+class Node:
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next
+
+
+class FIFOQueue:
+    def __init__(self):
+        self._head = None
+        self._tail = None
+        self._size = 0
+
+    def enqueue(self, item):
+        if not self._size:
+            node = Node(value=item)
+            self._tail = self._head = node  # If the queue is empty, initialize.
+        # If queue is not empty, append item at the end
+        else:
+            self._tail.next = Node(value=item)
+            self._tail = self._tail.next
+
+        self._size += 1
+
+    def dequeue(self):
+        if not self._size:
+            raise IndexError  # removing an item from empty queue: ERROR
+        node = self._head  # get the front node
+        self._head = self._head.next  # mark the next node in front as head
+
+        self._size -= 1
+
+        if not self._size:
+            self._tail = None
+
+        return node.value
+
+
 def next_positions(cell: tuple, memo={}) -> tuple[tuple]:
     """
     Returns the next 4 positions (down, up, right, left) of a given cell
@@ -196,18 +234,22 @@ def solution(grid: list[list[str]]) -> int:
     ROWS = len(grid)
     COLS = len(grid[0])
     GOAL = (ROWS - 1, COLS - 1)
-
+    # print(GOAL)
     if COLS < 2 | ROWS < 1:
         return -1
     elif any([grid[0][0] == "#", grid[0][1] == "#", grid[0][2] == "#"]):
         return -1
 
-    queue = [((0, 0), (0, 1), (0, 2), 0)]  # [(state, distance),...]
+    queue = FIFOQueue()
+    queue.enqueue(((0, 0), (0, 1), (0, 2), 0))
     single_queue = {((0, 0), (0, 1), (0, 2))}  # {states in queue}
     visited = set()  # {visited states}
 
     while queue:  # breadth first search
-        pos1, pos2, pos3, distance = queue.pop(0)  # FIFO queue
+        try:
+            pos1, pos2, pos3, distance = queue.dequeue()  # FIFO queue
+        except:
+            return -1
         state = (pos1, pos2, pos3)
         single_queue.discard(state)
         visited.add(state)  # add rod state to visited
@@ -220,8 +262,6 @@ def solution(grid: list[list[str]]) -> int:
         ):  # if any rod cell is at lower right corner
             return distance
 
-        # Append cells next positions to the queue IF: they are valid,
-        # they are not already in the queue and haven't been visited.
         for move in zip(
             next_positions(pos1), next_positions(pos2), next_positions(pos3)
         ):
@@ -232,24 +272,25 @@ def solution(grid: list[list[str]]) -> int:
                     is_valid_move(grid, move, ROWS, COLS),  # check if move is valid
                 ]
             ):  # not visited & not in queue & valid position
-                queue.append(move + (distance + 1,)), single_queue.add(move)
+                queue.enqueue(move + (distance + 1,)), single_queue.add(move)
 
-        if rotation := rotate(grid, state, ROWS, COLS):  # check if rod can rotate
+        if rotation := rotate(grid, state, ROWS, COLS):  # valid rotation
             if all(
                 [rotation not in visited, rotation not in single_queue]
-            ):  # new rotation not visited and not in queue
-                queue.append((*rotation, distance + 1)), single_queue.add(rotation)
+            ):  # not visited & not in queue
+                queue.enqueue(rotation + (distance + 1,)), single_queue.add(rotation)
 
     return -1  # No valid path found
 
 
-# print("Running labyrinth")
-# test1 = [
-#     [".", ".", ".", ".", ".", ".", ".", ".", "."],
-#     ["#", ".", ".", ".", "#", ".", ".", ".", "."],
-#     [".", ".", ".", ".", "#", ".", ".", ".", "."],
-#     [".", "#", ".", ".", ".", ".", ".", "#", "."],
-#     [".", "#", ".", ".", ".", ".", ".", "#", "."],
-# ]
+if __name__ == "__main__":
+    print("Running labyrinth")
+    test1 = [
+        [".", ".", ".", ".", ".", ".", ".", ".", "."],
+        ["#", ".", ".", ".", "#", ".", ".", ".", "."],
+        [".", ".", ".", ".", "#", ".", ".", ".", "."],
+        [".", "#", ".", ".", ".", ".", ".", "#", "."],
+        [".", "#", ".", ".", ".", ".", ".", "#", "."],
+    ]
 
-# print(f"Shortest path distance: {solution(test1)}")  # 11
+    print(f"Shortest path distance: {solution(test1)}")  # 11
