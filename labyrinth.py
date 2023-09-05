@@ -245,7 +245,7 @@ def solution(grid: list[list[str]]) -> int:
     single_queue = {((0, 0), (0, 1), (0, 2))}  # {states in queue}
     visited = set()  # {visited states}
 
-    while queue:  # breadth first search
+    while single_queue:  # breadth first search
         try:
             pos1, pos2, pos3, distance = queue.dequeue()  # FIFO queue
         except:
