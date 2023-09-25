@@ -78,14 +78,6 @@ class Solution:
         self.COLS = len(self.grid[0])
         self.GOAL = (self.ROWS - 1, self.COLS - 1)
 
-    def valid_grid(self):
-        if self.COLS < 2 | self.ROWS < 1:
-            return -1
-        if any(
-            [self.grid[0][0] == "#", self.grid[0][1] == "#", self.grid[0][2] == "#"]
-        ):
-            return -1
-
     def bfs(self):  # Breadth First Search
         if self.valid_grid() == -1:
             return -1
@@ -116,8 +108,12 @@ class Solution:
     def state_visitable(self, state):
         if state in self.visited or state in self.states_queue:
             return
-        if not self.is_valid_state(state):
-            return
+        for x, y in state:
+            if (
+                not (-1 < x < self.ROWS and -1 < y < self.COLS)
+                or not self.grid[x][y] == self.CLEAR
+            ):
+                return
         return True
 
     def next_positions(self, cell: tuple) -> tuple[tuple]:
@@ -137,26 +133,25 @@ class Solution:
     def next_rotation(self, rod):
         if rod.horizontal:
             up = rod.state[0][0] - 1
-            down = up + 2
             return (
                 (up, rod.state[1][1]),
                 rod.state[1],
-                (down, rod.state[1][1]),
+                (up + 2, rod.state[1][1]),
             )  # Returns vertically aligned state
         left = rod.state[0][1] - 1
-        right = left + 2
         return (
             (rod.state[1][0], left),
             rod.state[1],
-            (rod.state[1][0], right),
+            (rod.state[1][0], left + 2),
         )  # Returns horizontally aligned state
 
-    def is_valid_state(self, state: tuple[tuple]) -> bool:
-        return all(
-            (0 <= x < self.ROWS and 0 <= y < self.COLS)
-            and (self.grid[x][y] == self.CLEAR)
-            for x, y in state
-        )
+    def valid_grid(self):
+        if self.COLS < 2 or self.ROWS < 1:
+            return -1
+        if any(
+            [self.grid[0][0] == "#", self.grid[0][1] == "#", self.grid[0][2] == "#"]
+        ):
+            return -1
 
 
 if __name__ == "__main__":
