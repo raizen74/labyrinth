@@ -68,6 +68,10 @@ class Solution:
     def __init__(self, grid):
         self.grid = grid
         self.rod = Rod()
+        self.queue = FIFOQueue()
+        self.queue.enqueue(self.rod)  # FIFO queue
+        self.states_queue = {self.rod.state}
+        self.visited = set()
         self.memo = {}
         self.CLEAR = "."
         self.ROWS = len(self.grid)
@@ -85,54 +89,46 @@ class Solution:
     def bfs(self):  # Breadth First Search
         if self.valid_grid() == -1:
             return -1
-        queue = FIFOQueue()
-        queue.enqueue(self.rod)
-        single_queue = {self.rod.state}
-        visited = set()
-        combined_condition = (
-            lambda x: x not in visited
-            and x not in single_queue
-            and self.is_valid_move(x)
-        )  # Not visited & not in queue & valid move
+        while self.states_queue:
+            rod = self.queue.dequeue()
 
-        while True:
-            try:
-                rod = queue.dequeue()  # FIFO queue
-            except IndexError:
-                return -1
-
-            single_queue.discard(rod.state)
-            visited.add(rod.state)
-            if any(
-                [
-                    rod.state[0] == self.GOAL,
-                    rod.state[1] == self.GOAL,
-                    rod.state[2] == self.GOAL,
-                ]
-            ):  # If any rod cell is at lower right corner
-                return rod.dist
+            self.states_queue.discard(rod.state)
+            self.visited.add(rod.state)
             for new_state in zip(
                 self.next_positions(rod.state[0]),
                 self.next_positions(rod.state[1]),
                 self.next_positions(rod.state[2]),
             ):
-                if combined_condition(new_state):
-                    queue.enqueue(Rod(new_state, rod.dist + 1, rod.horizontal))
-                    single_queue.add(new_state)
+                if self.state_visitable(
+                    new_state
+                ):  # Not visited & not in queue & valid move
+                    self.queue.enqueue(Rod(new_state, rod.dist + 1, rod.horizontal))
+                    self.states_queue.add(new_state)
+                    if new_state[-1] == self.GOAL:  # Only the 3 cell can reach the GOAL
+                        return rod.dist + 1
+
             new_state = self.next_rotation(rod)
-            if combined_condition(new_state):
-                queue.enqueue(Rod(new_state, rod.dist + 1, not rod.horizontal))
-                single_queue.add(new_state)
+            if self.state_visitable(new_state):
+                self.queue.enqueue(Rod(new_state, rod.dist + 1, not rod.horizontal))
+                self.states_queue.add(new_state)
+        return -1
+
+    def state_visitable(self, state):
+        if state in self.visited or state in self.states_queue:
+            return
+        if not self.is_valid_state(state):
+            return
+        return True
 
     def next_positions(self, cell: tuple) -> tuple[tuple]:
         """
-        Returns the next 4 positions (down, up, right, left) of a given cell
+        Returns the next 4 positions (down, right, up, left) of a given cell
         """
         if cell not in self.memo.keys():
             self.memo[cell] = (
                 (cell[0] + 1, cell[1]),
-                (cell[0] - 1, cell[1]),
                 (cell[0], cell[1] + 1),
+                (cell[0] - 1, cell[1]),
                 (cell[0], cell[1] - 1),
             )
 
@@ -141,32 +137,26 @@ class Solution:
     def next_rotation(self, rod):
         if rod.horizontal:
             up = rod.state[0][0] - 1
-            down = rod.state[0][0] + 1
-            col = rod.state[1][1]
+            down = up + 2
             return (
-                (up, col),
+                (up, rod.state[1][1]),
                 rod.state[1],
-                (down, col),
+                (down, rod.state[1][1]),
             )  # Returns vertically aligned state
-        right = rod.state[0][1] + 1
         left = rod.state[0][1] - 1
-        row = rod.state[1][0]
+        right = left + 2
         return (
-            (row, left),
+            (rod.state[1][0], left),
             rod.state[1],
-            (row, right),
+            (rod.state[1][0], right),
         )  # Returns horizontally aligned state
 
-    def is_valid_move(self, positions: tuple[tuple]) -> bool:
-        for pos in positions:
-            if not (
-                0 <= pos[0] < self.ROWS and 0 <= pos[1] < self.COLS
-            ):  # Cell in matrix
-                return False
-
-            if not self.grid[pos[0]][pos[1]] == self.CLEAR:  # Cell not blocked
-                return False
-        return True
+    def is_valid_state(self, state: tuple[tuple]) -> bool:
+        return all(
+            (0 <= x < self.ROWS and 0 <= y < self.COLS)
+            and (self.grid[x][y] == self.CLEAR)
+            for x, y in state
+        )
 
 
 if __name__ == "__main__":
