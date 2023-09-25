@@ -25,6 +25,7 @@ class Node:
     def __init__(self, value, next=None):
         self.value = value
         self.next = next
+        self.horizontal = True
 
 
 class FIFOQueue:
@@ -57,9 +58,10 @@ class FIFOQueue:
 
 
 class Rod:
-    def __init__(self, state=((0, 0), (0, 1), (0, 2)), dist=0):
+    def __init__(self, state=((0, 0), (0, 1), (0, 2)), dist=0, horizontal=True):
         self.state = state
         self.dist = dist
+        self.horizontal = horizontal
 
 
 class Solution:
@@ -87,6 +89,12 @@ class Solution:
         queue.enqueue(self.rod)
         single_queue = {self.rod.state}
         visited = set()
+        combined_condition = (
+            lambda x: x not in visited
+            and x not in single_queue
+            and self.is_valid_move(x)
+        )  # Not visited & not in queue & valid move
+
         while True:
             try:
                 rod = queue.dequeue()  # FIFO queue
@@ -103,32 +111,24 @@ class Solution:
                 ]
             ):  # If any rod cell is at lower right corner
                 return rod.dist
-            for move in zip(
+            for new_state in zip(
                 self.next_positions(rod.state[0]),
                 self.next_positions(rod.state[1]),
                 self.next_positions(rod.state[2]),
             ):
-                if all(
-                    [
-                        move not in visited,  # Membership check in a set
-                        move not in single_queue,  # Membership check in a set
-                        self.is_valid_move(move),  # Check if move is valid
-                    ]
-                ):
-                    queue.enqueue(Rod(move, rod.dist + 1))
-                    single_queue.add(move)
-            if rotation := self.rotate(rod.state):
-                if all(
-                    [rotation not in visited, rotation not in single_queue]
-                ):  # Not visited & not in queue
-                    queue.enqueue(Rod(rotation, rod.dist + 1))
-                    single_queue.add(rotation)
+                if combined_condition(new_state):
+                    queue.enqueue(Rod(new_state, rod.dist + 1, rod.horizontal))
+                    single_queue.add(new_state)
+            new_state = self.next_rotation(rod)
+            if combined_condition(new_state):
+                queue.enqueue(Rod(new_state, rod.dist + 1, not rod.horizontal))
+                single_queue.add(new_state)
 
     def next_positions(self, cell: tuple) -> tuple[tuple]:
         """
         Returns the next 4 positions (down, up, right, left) of a given cell
         """
-        if not self.memo.get(cell):
+        if cell not in self.memo.keys():
             self.memo[cell] = (
                 (cell[0] + 1, cell[1]),
                 (cell[0] - 1, cell[1]),
@@ -138,50 +138,35 @@ class Solution:
 
         return self.memo[cell]
 
+    def next_rotation(self, rod):
+        if rod.horizontal:
+            up = rod.state[0][0] - 1
+            down = rod.state[0][0] + 1
+            col = rod.state[1][1]
+            return (
+                (up, col),
+                rod.state[1],
+                (down, col),
+            )  # Returns vertically aligned state
+        right = rod.state[0][1] + 1
+        left = rod.state[0][1] - 1
+        row = rod.state[1][0]
+        return (
+            (row, left),
+            rod.state[1],
+            (row, right),
+        )  # Returns horizontally aligned state
+
     def is_valid_move(self, positions: tuple[tuple]) -> bool:
         for pos in positions:
-            if not all(
-                [0 <= pos[0] < self.ROWS, 0 <= pos[1] < self.COLS]
+            if not (
+                0 <= pos[0] < self.ROWS and 0 <= pos[1] < self.COLS
             ):  # Cell in matrix
                 return False
 
             if not self.grid[pos[0]][pos[1]] == self.CLEAR:  # Cell not blocked
                 return False
         return True
-
-    def rotate(self, state) -> tuple | None:
-        rows_, cols_ = list(zip(*(state)))
-
-        if not all(
-            ([0 < rows_[1] < self.GOAL[0], 0 < cols_[1] < self.GOAL[1]])
-        ):  # Check if the central cell is not next to the wall
-            return
-
-        if len(set(rows_)) == 1:  # check if rod is horizontal
-            up = rows_[1] + 1
-            down = rows_[1] - 1
-            if all(
-                self.grid[up][col] == self.grid[down][col] == self.CLEAR
-                for col in cols_
-            ):
-                return (
-                    (down, cols_[1]),
-                    state[1],
-                    (up, cols_[1]),
-                )  # Returns vertically aligned state
-            return
-
-        right = cols_[1] + 1
-        left = cols_[1] - 1
-
-        if all(
-            self.grid[row][right] == self.grid[row][left] == self.CLEAR for row in rows_
-        ):
-            return (
-                (rows_[1], left),
-                state[1],
-                (rows_[1], right),
-            )  # Returns horizontally aligned state
 
 
 if __name__ == "__main__":
