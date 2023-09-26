@@ -61,16 +61,15 @@ class Rod:
     def __init__(self, state=((0, 0), (0, 1), (0, 2)), dist=0, horizontal=True):
         self.state = state
         self.dist = dist
-        self.horizontal = horizontal
+        self.h = horizontal
 
 
 class Solution:
     def __init__(self, grid):
         self.grid = grid
-        self.rod = Rod()
         self.queue = FIFOQueue()
-        self.queue.enqueue(self.rod)  # FIFO queue
-        self.states_queue = {self.rod.state}
+        self.queue.enqueue(Rod())  # FIFO queue
+        self.states_queue = {((0, 0), (0, 1), (0, 2))}
         self.visited = set()
         self.memo = {}
         self.CLEAR = "."
@@ -79,40 +78,39 @@ class Solution:
         self.GOAL = (self.ROWS - 1, self.COLS - 1)
 
     def bfs(self):  # Breadth First Search
-        if self.valid_grid() == -1:
+        if self.invalid_grid():
             return -1
-        while self.states_queue:
-            rod = self.queue.dequeue()
-
+        while True:
+            try:
+                rod = self.queue.dequeue()
+            except:
+                return -1
             self.states_queue.discard(rod.state)
             self.visited.add(rod.state)
-            for new_state in zip(
-                self.next_positions(rod.state[0]),
-                self.next_positions(rod.state[1]),
-                self.next_positions(rod.state[2]),
-            ):
+            if self.state_visitable(new_state := self.next_rotation(rod)):
+                self.states_queue.add(new_state)
+                self.queue.enqueue(Rod(new_state, rod.dist + 1, not rod.h))
+
+            for new_state in zip(*[self.next_positions(state) for state in rod.state]):
                 if self.state_visitable(
                     new_state
                 ):  # Not visited & not in queue & valid move
-                    self.queue.enqueue(Rod(new_state, rod.dist + 1, rod.horizontal))
                     self.states_queue.add(new_state)
-                    if new_state[-1] == self.GOAL:  # Only the 3 cell can reach the GOAL
+                    self.queue.enqueue(Rod(new_state, rod.dist + 1, rod.h))
+                    if new_state[2] == self.GOAL:
                         return rod.dist + 1
 
-            new_state = self.next_rotation(rod)
-            if self.state_visitable(new_state):
-                self.queue.enqueue(Rod(new_state, rod.dist + 1, not rod.horizontal))
-                self.states_queue.add(new_state)
-        return -1
-
     def state_visitable(self, state):
+        """
+        Returns True if state is visitable, else False
+        """
         if state in self.visited or state in self.states_queue:
             return
-        for x, y in state:
+        for cell in state:
             if (
-                not (-1 < x < self.ROWS and -1 < y < self.COLS)
-                or not self.grid[x][y] == self.CLEAR
-            ):
+                not (-1 < cell[0] < self.ROWS and -1 < cell[1] < self.COLS)
+                or not self.grid[cell[0]][cell[1]] == self.CLEAR
+            ):  # If some condition is not met return False
                 return
         return True
 
@@ -120,38 +118,38 @@ class Solution:
         """
         Returns the next 4 positions (down, right, up, left) of a given cell
         """
-        if cell not in self.memo.keys():
+        if not self.memo.get(cell):
             self.memo[cell] = (
-                (cell[0] + 1, cell[1]),
-                (cell[0], cell[1] + 1),
-                (cell[0] - 1, cell[1]),
-                (cell[0], cell[1] - 1),
+                (cell[0] + 1, cell[1]),  # Down
+                (cell[0], cell[1] + 1),  # Right
+                (cell[0] - 1, cell[1]),  # Up
+                (cell[0], cell[1] - 1),  # Left
             )
 
         return self.memo[cell]
 
     def next_rotation(self, rod):
-        if rod.horizontal:
+        """
+        Change orientation of rod state
+        """
+        if rod.h:
             up = rod.state[0][0] - 1
-            return (
-                (up, rod.state[1][1]),
-                rod.state[1],
-                (up + 2, rod.state[1][1]),
-            )  # Returns vertically aligned state
+            return (up, rod.state[1][1]), rod.state[1], (up + 2, rod.state[1][1])
+            # Returns vertically aligned state
         left = rod.state[0][1] - 1
-        return (
-            (rod.state[1][0], left),
-            rod.state[1],
-            (rod.state[1][0], left + 2),
-        )  # Returns horizontally aligned state
+        return (rod.state[1][0], left), rod.state[1], (rod.state[1][0], left + 2)
+        # Returns horizontally aligned state
 
-    def valid_grid(self):
-        if self.COLS < 2 or self.ROWS < 1:
-            return -1
+    def invalid_grid(self):
+        """
+        Return True if grid is invalid, else None
+        """
+        if self.COLS < 3 or self.ROWS < 1:
+            return True
         if any(
             [self.grid[0][0] == "#", self.grid[0][1] == "#", self.grid[0][2] == "#"]
         ):
-            return -1
+            return True
 
 
 if __name__ == "__main__":
