@@ -103,7 +103,7 @@ class Solution:
                 ):  # Not visited & not in queue & valid move
                     self.states_queue.add(new_state)
                     self.queue.enqueue(Rod(new_state, rod.dist, rod.h))
-                    if new_state[2] == self.GOAL: # Only last cell can reach
+                    if new_state[2] == self.GOAL: # Only reachable by last cell
                         return rod.dist
             # Change orientation
             new_state = (
@@ -117,7 +117,7 @@ class Solution:
 
     def valid_state(self, state):
         """
-        Returns True if state is visitable, else False
+        Returns True if state is valid, else False
         """
         if state in self.visited or state in self.states_queue:
             return
@@ -131,7 +131,7 @@ class Solution:
 
     def valid_rotation(self, rod):
         """
-        Return True if borders are CLEAR
+        Return True if borders are CLEAR, else False
         """
         if rod.h:
             for i in range(0, 3, 2):  # Left and Right cells in rod.state
@@ -169,4 +169,4 @@ if __name__ == "__main__":
         [".", "#", ".", ".", ".", ".", ".", ".", "."],
     ]
     s = Solution(test1)
-    print(f"Shortest path distance: {s.bfs()}")  # 11
+    print(f"Shortest path distance: {s.bfs()}")  # 10
