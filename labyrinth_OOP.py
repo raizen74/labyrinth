@@ -87,58 +87,65 @@ class Solution:
                 return -1
             self.states_queue.discard(rod.state)
             self.visited.add(rod.state)
-            if self.state_visitable(new_state := self.next_rotation(rod)):
-                self.states_queue.add(new_state)
-                self.queue.enqueue(Rod(new_state, rod.dist + 1, not rod.h))
-
-            for new_state in zip(*[self.next_positions(state) for state in rod.state]):
-                if self.state_visitable(
+            for cell in rod.state:  # Memoize possible next cells
+                if not self.memo.get(cell):
+                    self.memo[cell] = (
+                        (cell[0] + 1, cell[1]),  # Down
+                        (cell[0], cell[1] + 1),  # Right
+                        (cell[0] - 1, cell[1]),  # Up
+                        (cell[0], cell[1] - 1),  # Left
+                    )
+            rod.dist += 1
+            # Linear movements
+            for new_state in zip(*[self.memo[state] for state in rod.state]):
+                if self.valid_state(
                     new_state
                 ):  # Not visited & not in queue & valid move
                     self.states_queue.add(new_state)
-                    self.queue.enqueue(Rod(new_state, rod.dist + 1, rod.h))
-                    if new_state[2] == self.GOAL:
-                        return rod.dist + 1
+                    self.queue.enqueue(Rod(new_state, rod.dist, rod.h))
+                    if new_state[2] == self.GOAL: # Only last cell can reach
+                        return rod.dist
+            # Change orientation
+            new_state = (
+                (self.memo[rod.state[1]][2], rod.state[1], self.memo[rod.state[1]][0])
+                if rod.h  # (Up, Central, Down) vertical
+                else (self.memo[rod.state[1]][3], rod.state[1], self.memo[rod.state[1]][1])
+            )  # (Left, Central, Right) horizontal
+            if self.valid_state(new_state) and self.valid_rotation(rod):
+                self.states_queue.add(new_state)
+                self.queue.enqueue(Rod(new_state, rod.dist, not rod.h))
 
-    def state_visitable(self, state):
+    def valid_state(self, state):
         """
         Returns True if state is visitable, else False
         """
         if state in self.visited or state in self.states_queue:
             return
-        for cell in state:
+        for row, col in state:
             if (
-                not (-1 < cell[0] < self.ROWS and -1 < cell[1] < self.COLS)
-                or not self.grid[cell[0]][cell[1]] == self.CLEAR
+                not (-1 < row < self.ROWS and -1 < col < self.COLS)
+                or not self.grid[row][col] == self.CLEAR
             ):  # If some condition is not met return False
                 return
         return True
 
-    def next_positions(self, cell: tuple) -> tuple[tuple]:
+    def valid_rotation(self, rod):
         """
-        Returns the next 4 positions (down, right, up, left) of a given cell
-        """
-        if not self.memo.get(cell):
-            self.memo[cell] = (
-                (cell[0] + 1, cell[1]),  # Down
-                (cell[0], cell[1] + 1),  # Right
-                (cell[0] - 1, cell[1]),  # Up
-                (cell[0], cell[1] - 1),  # Left
-            )
-
-        return self.memo[cell]
-
-    def next_rotation(self, rod):
-        """
-        Change orientation of rod state
+        Return True if borders are CLEAR
         """
         if rod.h:
-            up = rod.state[0][0] - 1
-            return (up, rod.state[1][1]), rod.state[1], (up + 2, rod.state[1][1])
-            # Returns vertically aligned state
-        left = rod.state[0][1] - 1
-        return (rod.state[1][0], left), rod.state[1], (rod.state[1][0], left + 2)
-        # Returns horizontally aligned state
+            for i in range(0, 3, 2):  # Left and Right cells in rod.state
+                for j in range(0, 3, 2):  # Down and Up are 0 and 2 in memo
+                    row, col = self.memo[rod.state[i]][j]
+                    if self.grid[row][col] != self.CLEAR:
+                        return
+        else:
+            for i in range(0, 3, 2):  # Up and Down cells in rod.state
+                for j in range(1, 4, 2):  # Right and left are 1 and 2 in memo
+                    row, col = self.memo[rod.state[i]][j]
+                    if self.grid[row][col] != self.CLEAR:
+                        return
+        return True
 
     def invalid_grid(self):
         """
@@ -157,9 +164,9 @@ if __name__ == "__main__":
     test1 = [
         [".", ".", ".", ".", ".", ".", ".", ".", "."],
         ["#", ".", ".", ".", "#", ".", ".", ".", "."],
-        [".", ".", ".", ".", "#", ".", ".", ".", "."],
-        [".", "#", ".", ".", ".", ".", ".", "#", "."],
-        [".", "#", ".", ".", ".", ".", ".", "#", "."],
+        [".", ".", ".", ".", ".", ".", ".", "#", "#"],
+        [".", "#", ".", ".", ".", ".", ".", ".", "."],
+        [".", "#", ".", ".", ".", ".", ".", ".", "."],
     ]
     s = Solution(test1)
     print(f"Shortest path distance: {s.bfs()}")  # 11
