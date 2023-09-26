@@ -117,7 +117,7 @@ class Solution:
 
     def valid_state(self, state):
         """
-        Returns True if state is valid, else False
+        Returns True if state is valid, else None
         """
         if state in self.visited or state in self.states_queue:
             return
@@ -131,7 +131,7 @@ class Solution:
 
     def valid_rotation(self, rod):
         """
-        Return True if borders are CLEAR, else False
+        Return True if borders are CLEAR, else None
         """
         if rod.h:
             for i in range(0, 3, 2):  # Left and Right cells in rod.state
