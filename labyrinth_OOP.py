@@ -91,8 +91,8 @@ class Solution:
                 if not self.memo.get(cell):
                     self.memo[cell] = (
                         (cell[0] + 1, cell[1]),  # Down
-                        (cell[0], cell[1] + 1),  # Right
                         (cell[0] - 1, cell[1]),  # Up
+                        (cell[0], cell[1] + 1),  # Right
                         (cell[0], cell[1] - 1),  # Left
                     )
             distance += 1
@@ -107,9 +107,9 @@ class Solution:
                         return distance
             # Change orientation
             new_state = (
-                (self.memo[state[1]][2], state[1], self.memo[state[1]][0])
+                (self.memo[state[1]][1], state[1], self.memo[state[1]][0])
                 if horizontal  # (Up, Central, Down) vertical
-                else (self.memo[state[1]][3], state[1], self.memo[state[1]][1])
+                else (self.memo[state[1]][3], state[1], self.memo[state[1]][2])
             )  # (Left, Central, Right) horizontal
             if new_state not in self.visited and self.valid_rotation(state, horizontal):
                 self.states_queue.add(new_state)
@@ -140,15 +140,15 @@ class Solution:
                     self.grid[self.memo[cell][u_d][0]][self.memo[cell][u_d][1]]
                     == self.CLEAR
                     for cell in state
-                    for u_d in range(0, 3, 2)
-                )  # Down and Up are 0 and 2 in memo
+                    for u_d in range(2)
+                )  # Down and Up are 0 and 1 in memo
                 if horizontal
                 else all(
                     self.grid[self.memo[cell][r_l][0]][self.memo[cell][r_l][1]]
                     == self.CLEAR
                     for cell in state
-                    for r_l in range(1, 4, 2)
-                )  # Right and left are 1 and 2 in memo
+                    for r_l in range(2,4)
+                )  # Right and left are 2 and 3 in memo
             )
         return False
 
