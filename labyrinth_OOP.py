@@ -98,8 +98,10 @@ class Solution:
             distance += 1
             # Linear movements
             for new_state in zip(*[self.memo[cell] for cell in state]):
-                if self.valid_state(
-                    new_state
+                if (
+                    new_state not in self.visited
+                    and new_state not in self.states_queue
+                    and self.valid_state(new_state, horizontal)
                 ):  # Not visited & not in queue & valid move
                     self.states_queue.add(new_state)
                     self.queue.enqueue((new_state, distance, horizontal))
@@ -115,19 +117,16 @@ class Solution:
                 self.states_queue.add(new_state)
                 self.queue.enqueue((new_state, distance, not horizontal))
 
-    def valid_state(self, state):
+    def valid_state(self, state, horizontal):
         """
         Returns True if state is valid, else None
         """
-        if state in self.visited or state in self.states_queue:
-            return
-        for row, col in state:
-            if (
-                not (0 <= row <= self.GOAL[0] and 0 <= col <= self.GOAL[1])
-                or self.grid[row][col] != self.CLEAR
-            ):  # If cell out of the matrix or not clear
-                return
-        return True
+        if horizontal:
+            if 0 <= state[2][0] <= self.GOAL[0] and 2 <= state[2][1] <= self.GOAL[1]:
+                return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
+        else:
+            if 2 <= state[2][0] <= self.GOAL[0] and 0 <= state[2][1] <= self.GOAL[1]:
+                return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
 
     def valid_rotation(self, state, horizontal):
         """
@@ -147,10 +146,9 @@ class Solution:
                     self.grid[self.memo[cell][r_l][0]][self.memo[cell][r_l][1]]
                     == self.CLEAR
                     for cell in state
-                    for r_l in range(2,4)
+                    for r_l in range(2, 4)
                 )  # Right and left are 2 and 3 in memo
             )
-        return False
 
     def invalid_grid(self):
         """
