@@ -103,15 +103,23 @@ class Solution:
                 ):  # Not visited & not in queue & valid move
                     self.states_queue.add(new_state)
                     self.queue.enqueue(Rod(new_state, rod.dist, rod.h))
-                    if new_state[2] == self.GOAL: # Only reachable by last cell
+                    if new_state[2] == self.GOAL:  # Only reachable by last cell
                         return rod.dist
             # Change orientation
             new_state = (
                 (self.memo[rod.state[1]][2], rod.state[1], self.memo[rod.state[1]][0])
                 if rod.h  # (Up, Central, Down) vertical
-                else (self.memo[rod.state[1]][3], rod.state[1], self.memo[rod.state[1]][1])
+                else (
+                    self.memo[rod.state[1]][3],
+                    rod.state[1],
+                    self.memo[rod.state[1]][1],
+                )
             )  # (Left, Central, Right) horizontal
-            if self.valid_state(new_state) and self.valid_rotation(rod):
+            if (
+                new_state not in self.visited
+                and new_state not in self.states_queue
+                and self.valid_rotation(rod)
+            ):
                 self.states_queue.add(new_state)
                 self.queue.enqueue(Rod(new_state, rod.dist, not rod.h))
 
@@ -123,29 +131,32 @@ class Solution:
             return
         for row, col in state:
             if (
-                not (-1 < row < self.ROWS and -1 < col < self.COLS)
-                or not self.grid[row][col] == self.CLEAR
-            ):  # If some condition is not met return False
+                not (0 <= row <= self.GOAL[0] and 0 <= col <= self.GOAL[1])
+                or self.grid[row][col] != self.CLEAR
+            ):  # If cell out of the matrix or not clear
                 return
         return True
 
     def valid_rotation(self, rod):
         """
-        Return True if borders are CLEAR, else None
+        Return True if rotation is valid
         """
-        if rod.h:
-            for i in range(0, 3, 2):  # Left and Right cells in rod.state
-                for j in range(0, 3, 2):  # Down and Up are 0 and 2 in memo
-                    row, col = self.memo[rod.state[i]][j]
-                    if self.grid[row][col] != self.CLEAR:
-                        return
-        else:
-            for i in range(0, 3, 2):  # Up and Down cells in rod.state
-                for j in range(1, 4, 2):  # Right and left are 1 and 2 in memo
-                    row, col = self.memo[rod.state[i]][j]
-                    if self.grid[row][col] != self.CLEAR:
-                        return
-        return True
+        if (
+            1 <= rod.state[1][0] < self.GOAL[0] and 1 <= rod.state[1][1] < self.GOAL[1]
+        ):  # Rod must not be in the border
+            if rod.h:
+                for cell in range(3):  # Left and Right cells in rod.state
+                    for j in range(0, 3, 2):  # Down and Up are 0 and 2 in memo
+                        row, col = self.memo[rod.state[cell]][j]
+                        if self.grid[row][col] != self.CLEAR:
+                            return
+            else:
+                for cell in range(3):  # Up and Down cells in rod.state
+                    for j in range(1, 4, 2):  # Right and left are 1 and 2 in memo
+                        row, col = self.memo[rod.state[cell]][j]
+                        if self.grid[row][col] != self.CLEAR:
+                            return
+            return True
 
     def invalid_grid(self):
         """
