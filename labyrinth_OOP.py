@@ -30,27 +30,27 @@ class Node:
 
 class FIFOQueue:
     def __init__(self):
-        self._head = None
-        self._tail = None
+        self.head = None
+        self.tail = None
         # self._size = 0
 
     def enqueue(self, item):
-        if not self._head:
-            self._tail = self._head = Node(
+        if not self.head:
+            self.tail = self.head = Node(
                 value=item
             )  # If the queue is empty, initialize.
         # If queue is not empty, append node at the end
         else:
-            self._tail.next = Node(value=item)  # Change attr of the tail
-            self._tail = self._tail.next  # Refresh the tail node
+            self.tail.next = Node(value=item)  # Change attr of the tail
+            self.tail = self.tail.next  # Refresh the tail node
 
         # self._size += 1
 
     def dequeue(self):
-        if not self._head:
+        if not self.head:
             raise IndexError  # Removing an item from empty queue: ERROR
-        value = self._head.value  # Get the front node
-        self._head = self._head.next  # Set the next node in front as head
+        value = self.head.value  # Get the front node
+        self.head = self.head.next  # Set the next node in front as head
 
         # self._size -= 1
 
@@ -79,11 +79,8 @@ class Solution:
     def bfs(self):  # Breadth First Search
         if self.invalid_grid():
             return -1
-        while True:
-            try:
-                state, distance, horizontal = self.queue.dequeue()
-            except:
-                return -1
+        while self.queue.head:
+            state, distance, horizontal = self.queue.dequeue()
             for cell in state:  # Memoize possible next cells
                 if cell not in self.memo.keys():
                     self.memo[cell] = [
@@ -91,10 +88,14 @@ class Solution:
                         (cell[0] - 1, cell[1]),  # Up
                         (cell[0], cell[1] + 1),  # Right
                         (cell[0], cell[1] - 1),  # Left
-                        ]
+                    ]
             distance += 1
             # Linear movements
-            for new_state in (s for s in zip(*[self.memo[cell] for cell in state]) if s not in self.states_checked):
+            for new_state in (
+                s
+                for s in zip(*[self.memo[cell] for cell in state])
+                if s not in self.states_checked
+            ):
                 self.states_checked.add(new_state)
                 if self.valid_state(new_state, horizontal):  # Valid move
                     self.queue.enqueue((new_state, distance, horizontal))
@@ -110,39 +111,31 @@ class Solution:
                 self.states_checked.add(new_state)
                 if self.valid_rotation(state, horizontal):
                     self.queue.enqueue([new_state, distance, not horizontal])
+        return -1
 
     def valid_state(self, state, horizontal):
         """
         Returns True if state is valid, else None
         """
-        #print(state[2])
-        if horizontal:
-            if all([0 <= state[2][0] <= self.GOAL[0], 2 <= state[2][1] <= self.GOAL[1]]):
-                return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
-        else:
-            if all([2 <= state[2][0] <= self.GOAL[0], 0 <= state[2][1] <= self.GOAL[1]]):
-                return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
+        if (
+            0 <= state[2][0] <= self.GOAL[0] and 2 <= state[2][1] <= self.GOAL[1]
+            if horizontal
+            else 2 <= state[2][0] <= self.GOAL[0] and 0 <= state[2][1] <= self.GOAL[1]
+        ):  # Check if rod is in the matrix
+            return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
 
     def valid_rotation(self, state, horizontal):
         """
         Returns True if rotation is valid, else None
         """
-        # Rod must not be in the border
+        # Central Cell must not be in the border
         if all(1 <= state[1][_] < self.GOAL[_] for _ in range(2)):
-            return (
-                all(
-                    self.grid[self.memo[cell][d_u][0]][self.memo[cell][d_u][1]]
-                    == self.CLEAR
-                    for cell in state
-                    for d_u in range(2)
-                )  # Down and Up are 0 and 1 in memo
-                if horizontal
-                else all(
-                    self.grid[self.memo[cell][r_l][0]][self.memo[cell][r_l][1]]
-                    == self.CLEAR
-                    for cell in state
-                    for r_l in range(2, 4)
-                )  # Right and left are 2 and 3 in memo
+            dx, dy = (0, 1) if horizontal else (2, 3)  # Down, Up or Right, Left
+            return all(
+                self.grid[self.memo[cell][dx][0]][self.memo[cell][dx][1]]
+                == self.grid[self.memo[cell][dy][0]][self.memo[cell][dy][1]]
+                == self.CLEAR
+                for cell in state
             )
 
     def invalid_grid(self):
