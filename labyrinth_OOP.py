@@ -57,13 +57,6 @@ class FIFOQueue:
         return value
 
 
-# class Rod:
-#     def __init__(self, state=((0, 0), (0, 1), (0, 2)), dist=0, horizontal=True):
-#         self.state = state
-#         self.dist = dist
-#         self.h = horizontal
-
-
 class Solution:
     def __init__(self, grid):
         self.grid = grid
@@ -75,10 +68,12 @@ class Solution:
         self.ROWS = len(self.grid)
         self.COLS = len(self.grid[0])
         self.GOAL = (self.ROWS - 1, self.COLS - 1)
-
-    def bfs(self):  # Breadth First Search
+        self.inside = [lambda third_cell: 0 <= third_cell[0] <= self.GOAL[0] and 2 <= third_cell[1] <= self.GOAL[1],
+                       lambda third_cell: 2 <= third_cell[0] <= self.GOAL[0] and 0 <= third_cell[1] <= self.GOAL[1]]
         if self.invalid_grid():
             return -1
+
+    def bfs(self):  # Breadth First Search
         while self.queue.head:
             state, distance, horizontal = self.queue.dequeue()
             for cell in state:  # Memoize possible next cells
@@ -89,6 +84,12 @@ class Solution:
                         (cell[0], cell[1] + 1),  # Right
                         (cell[0], cell[1] - 1),  # Left
                     ]
+            if horizontal:
+                inside = self.inside[0]  # Condition of 3rd cell to be in grid
+                dx, dy = range(2)  # Down, Up in memo
+            else:
+                inside = self.inside[1]
+                dx, dy = range(2, 4)  # Right, Left in memo
             distance += 1
             # Linear movements
             for new_state in (
@@ -97,40 +98,31 @@ class Solution:
                 if s not in self.states_checked
             ):
                 self.states_checked.add(new_state)
-                if self.valid_state(new_state, horizontal):  # Valid move
+                if inside(new_state[2]) and all(
+                    self.grid[cell[0]][cell[1]] == self.CLEAR for cell in new_state
+                ):  # Valid move
                     self.queue.enqueue((new_state, distance, horizontal))
                     if new_state[2] == self.GOAL:  # Only reachable by last cell
                         return distance
             # Change orientation
-            new_state = (
-                (self.memo[state[1]][1], state[1], self.memo[state[1]][0])
-                if horizontal  # (Up, Central, Down) vertical
-                else (self.memo[state[1]][3], state[1], self.memo[state[1]][2])
-            )  # (Left, Central, Right) horizontal
-            if new_state not in self.states_checked:
+            if (
+                new_state := (
+                    self.memo[state[1]][dy],
+                    state[1],
+                    self.memo[state[1]][dx],
+                )
+            ) not in self.states_checked:
                 self.states_checked.add(new_state)
-                if self.valid_rotation(state, horizontal):
+                if self.valid_rotation(state, dx, dy):
                     self.queue.enqueue([new_state, distance, not horizontal])
         return -1
 
-    def valid_state(self, state, horizontal):
-        """
-        Returns True if state is valid, else None
-        """
-        if (
-            0 <= state[2][0] <= self.GOAL[0] and 2 <= state[2][1] <= self.GOAL[1]
-            if horizontal
-            else 2 <= state[2][0] <= self.GOAL[0] and 0 <= state[2][1] <= self.GOAL[1]
-        ):  # Check if rod is in the matrix
-            return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
-
-    def valid_rotation(self, state, horizontal):
+    def valid_rotation(self, state, dx, dy):
         """
         Returns True if rotation is valid, else None
         """
         # Central Cell must not be in the border
         if all(1 <= state[1][_] < self.GOAL[_] for _ in range(2)):
-            dx, dy = (0, 1) if horizontal else (2, 3)  # Down, Up or Right, Left
             return all(
                 self.grid[self.memo[cell][dx][0]][self.memo[cell][dx][1]]
                 == self.grid[self.memo[cell][dy][0]][self.memo[cell][dy][1]]
@@ -142,9 +134,7 @@ class Solution:
         """
         Return True if grid is invalid, else None
         """
-        if self.COLS <= 2:
-            return True
-        if any(self.grid[0][col] != self.CLEAR for col in range(3)):
+        if self.COLS <= 2 or any(self.grid[0][col] != self.CLEAR for col in range(3)):
             return True
 
 
@@ -159,3 +149,16 @@ if __name__ == "__main__":
     ]
     s = Solution(test1)
     print(f"Shortest path distance: {s.bfs()}")  # 10
+
+    # def valid_state(self, state, inside):
+    #     """
+    #     Returns True if state is valid, else None
+    #     """
+    #     if inside(state[2]):  # Check if rod is in the matrix
+    #         return all(self.grid[cell[0]][cell[1]] == self.CLEAR for cell in state)
+
+# class Rod:
+#     def __init__(self, state=((0, 0), (0, 1), (0, 2)), dist=0, horizontal=True):
+#         self.state = state
+#         self.dist = dist
+#         self.h = horizontal
