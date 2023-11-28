@@ -1,4 +1,6 @@
 # Labyrinth
+This technical assessment is part of the hiring process for a Data Engineer role in a company based in Palma de Mallorca, in which I participated in 2023. The goal is to design an efficient algorithm that solves the following problem:
+
 The goal is to carry the rod from the top left corner of the labyrinth to the bottom
 right corner. This rod is not exactly the lightest thing you can imagine, so the
 participant would naturally want to do it as fast as possible.
